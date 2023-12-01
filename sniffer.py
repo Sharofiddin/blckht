@@ -7,7 +7,7 @@ import sys
 
 class IP(Structure):
     _fields_ = [
-        ("version", c_ubyte, 4),
+        ("ver", c_ubyte, 4),
         ("ihl", c_ubyte, 4),
         ("tos",c_ubyte ,8 ),
         ("len",c_ushort ,16 ),
@@ -30,44 +30,65 @@ class IP(Structure):
         except Exception as e:
             print('%s No protocol for %s %s' % (e,self.protocol_num))
             self.protocol = str(self.protocol)
-def sniff(host):
-    socket_protocol = socket.IPPROTO_ICMP
-    snifferICMP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
-    snifferICMP.bind((host, 0))
-    snifferICMP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-    socket_protocol = socket.IPPROTO_TCP
-    snifferTCP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
-    snifferTCP.bind((host, 0))
-    snifferTCP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-    socket_protocol = socket.IPPROTO_UDP
-    snifferUDP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
-    snifferUDP.bind((host, 0))
-    snifferUDP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+class ICMP:
+    def __init__(self, buff):
+        header = struct.unpack('<BBHHH', buff)
+        self.type = header[0]
+        self.code = header[1]
+        self.sum = header[2]
+        self.id = header[3]
+        self.seq = header[4]
+
+def sniff(host, sniff_prot):
+    if sniff_prot == 'TCP':
+        socket_protocol = socket.IPPROTO_TCP
+    elif sniff_prot == 'UDP':
+        socket_protocol = socket.IPPROTO_UDP
+    else:
+        socket_protocol = socket.IPPROTO_ICMP
+    sniffer = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
+    sniffer.bind((host, 0))
+    sniffer.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
     try:
       while True:
-        raw_buffer = snifferICMP.recvfrom(65565)[0]
+        raw_buffer = sniffer.recvfrom(65565)[0]
         ip_header = IP(raw_buffer[0:20])
         print('Protocol: %s %s -> %s' % (ip_header.protocol,
                                          ip_header.src_address,
                                          ip_header.dst_address))
-        raw_buffer = snifferTCP.recvfrom(65565)[0]
-        ip_header = IP(raw_buffer[0:20])
-        print('Protocol: %s %s -> %s' % (ip_header.protocol,
-                                         ip_header.src_address,
-                                         ip_header.dst_address))
-        raw_buffer = snifferUDP.recvfrom(65565)[0]
-        ip_header = IP(raw_buffer[0:20])
-        print('Protocol: %s %s -> %s' % (ip_header.protocol,
-                                         ip_header.src_address,
-                                         ip_header.dst_address))
+        print(f'Version: {ip_header.ver}')
+        print(f'Header len:{ip_header.ihl}, TTL: {ip_header.ttl}')
+        if sniff_prot == 'ICMP':
+           offset = ip_header.ihl * 4
+           buff = raw_buffer[offset : offset + 8]
+           icmp_header = ICMP(buff)
+           print('''
+         ICMP -> Type: %s
+                 Code: %s
+                 Sum: %s
+                 Id: %s
+                 Seq: %s
+                 '''%
+                 (icmp_header.type,
+                  icmp_header.code,
+                  icmp_header.sum,
+                  icmp_header.id,
+                  icmp_header.seq
+                  ))
     except KeyboardInterrupt:
       sys.exit()
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
+    if len(sys.argv) >= 2:
       host = sys.argv[1]
+      if len(sys.argv) > 2:
+        protocol = sys.argv[2]
+      else:
+        protocol = 'ICMP'
     else:
-      print('Enter host IP')
+      print('Enter host IP: ')
       host = input()
-    sniff(host)
+      print('Protocol: ')
+      protocol = input()
+    sniff(host, protocol)
 
