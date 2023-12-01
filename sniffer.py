@@ -5,7 +5,6 @@ import socket
 import struct
 import sys
 
-
 class IP(Structure):
     _fields_ = [
         ("version", c_ubyte, 4),
@@ -33,12 +32,30 @@ class IP(Structure):
             self.protocol = str(self.protocol)
 def sniff(host):
     socket_protocol = socket.IPPROTO_ICMP
-    sniffer = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
-    sniffer.bind((host, 0))
-    sniffer.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    snifferICMP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
+    snifferICMP.bind((host, 0))
+    snifferICMP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    socket_protocol = socket.IPPROTO_TCP
+    snifferTCP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
+    snifferTCP.bind((host, 0))
+    snifferTCP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    socket_protocol = socket.IPPROTO_UDP
+    snifferUDP = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
+    snifferUDP.bind((host, 0))
+    snifferUDP.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
     try:
       while True:
-        raw_buffer = sniffer.recvfrom(65565)[0]
+        raw_buffer = snifferICMP.recvfrom(65565)[0]
+        ip_header = IP(raw_buffer[0:20])
+        print('Protocol: %s %s -> %s' % (ip_header.protocol,
+                                         ip_header.src_address,
+                                         ip_header.dst_address))
+        raw_buffer = snifferTCP.recvfrom(65565)[0]
+        ip_header = IP(raw_buffer[0:20])
+        print('Protocol: %s %s -> %s' % (ip_header.protocol,
+                                         ip_header.src_address,
+                                         ip_header.dst_address))
+        raw_buffer = snifferUDP.recvfrom(65565)[0]
         ip_header = IP(raw_buffer[0:20])
         print('Protocol: %s %s -> %s' % (ip_header.protocol,
                                          ip_header.src_address,
