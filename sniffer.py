@@ -59,7 +59,7 @@ def sniff(host, sniff_prot):
         print(f'Version: {ip_header.ver}')
         print(f'Header len:{ip_header.ihl}, TTL: {ip_header.ttl}')
         if sniff_prot == 'ICMP':
-           offset = ip_header.ihl * 4
+           offset = ip_header.ihl * 5
            buff = raw_buffer[offset : offset + 8]
            icmp_header = ICMP(buff)
            print('''
@@ -71,9 +71,10 @@ def sniff(host, sniff_prot):
                  '''%
                  (icmp_header.type,
                   icmp_header.code,
-                  icmp_header.sum,
-                  icmp_header.id,
-                  icmp_header.seq
+                  # convert endianess of network to host
+                  socket.ntohs(icmp_header.sum),
+                  socket.ntohs(icmp_header.id),
+                  socket.ntohs(icmp_header.seq)
                   ))
     except KeyboardInterrupt:
       sys.exit()
