@@ -8,7 +8,7 @@ import sys
 
 class IP(Structure):
     _fields_ = [
-        ("ver", c_ubyte, 4),
+        ("version", c_ubyte, 4),
         ("ihl", c_ubyte, 4),
         ("tos",c_ubyte ,8 ),
         ("len",c_ushort ,16 ),
@@ -57,7 +57,7 @@ def sniff(host, sniff_prot):
         print('Protocol: %s %s -> %s' % (ip_header.protocol,
                                          ip_header.src_address,
                                          ip_header.dst_address))
-        print(f'Version: {ip_header.ver}')
+        print(f'Version: {ip_header.version}')
         print(f'Header len:{ip_header.ihl}, TTL: {ip_header.ttl}')
         if sniff_prot == 'ICMP':
            offset = ip_header.ihl * 5
