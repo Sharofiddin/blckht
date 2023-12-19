@@ -30,7 +30,7 @@ class Arper:
     self.posion_thread = Process(target = self.posion)
     self.posion_thread.start()
 
-    self.sniff_thread = Process(target = self.sniff)
+    self.sniff_thread = Process(target = self.sniff, args=[1000])
     self.sniff_thread.start()
 
   def posion(self):
