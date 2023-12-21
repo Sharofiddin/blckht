@@ -21,22 +21,23 @@ def get_header(payload):
     if 'Content-Type' not in header :
         return None
     return header
-    
+
 def extract_content(Response, content_name='image'):
     content, content_type = None, None
     if content_name in Response.header['Content-Type']:
         content_type = Response.header['Content-Type'].split('/')[1]
+        print(content_type)
         content = Response.payload[Response.payload.index(b'\r\n\r\n')+4:]
 
         if 'Content-Encoding' in Response.header:
             if Response.header['Content-Encoding'] == 'gzip':
-                content = zlib.decompress(Response.payload, zlib.MAX_WBITS | 32)
+                content = zlib.decompress(content, zlib.MAX_WBITS | 32)
             elif Response.header['Content-Encoding'] == 'deflate':
-                content = zlib.decompress(Response.payload)
+                content = zlib.decompress(content)
     return content, content_type
 
 
-HTTP_PORTS = [80,3000]  
+HTTP_PORTS = [80,8080,3000, 8081, 8082]
 
 class Recapper:
     def __init__(self, fname) -> None:
@@ -50,6 +51,8 @@ class Recapper:
                 try:
                    if packet[TCP].dport in HTTP_PORTS or packet[TCP].sport in HTTP_PORTS:
                        payload += bytes(packet[TCP].payload)
+                       sys.stdout.write('o')
+                       sys.stdout.flush()
                 except IndexError as ex:
                     sys.stdout.write('x')
                     sys.stdout.flush()
@@ -73,5 +76,5 @@ if __name__ == '__main__':
     pfile = os.path.join(PCAPS, 'pcap.pcap')
     recapper = Recapper(pfile)
     recapper.get_responses()
-    
-    recapper.write('html')
+ 
+    recapper.write(input('content type:'))
