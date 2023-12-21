@@ -26,7 +26,8 @@ def extract_content(Response, content_name='image'):
     content, content_type = None, None
     if content_name in Response.header['Content-Type']:
         content_type = Response.header['Content-Type'].split('/')[1]
-        print(content_type)
+        sys.stdout.write(content_type + '\n')
+        sys.stdout.flush()
         content = Response.payload[Response.payload.index(b'\r\n\r\n')+4:]
 
         if 'Content-Encoding' in Response.header:
@@ -77,4 +78,4 @@ if __name__ == '__main__':
     recapper = Recapper(pfile)
     recapper.get_responses()
  
-    recapper.write(input('content type:'))
+    recapper.write(input('\ncontent type:'))
